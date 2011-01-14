@@ -1,0 +1,115 @@
+#!/usr/bin/env ruby
+require 'optparse'
+
+def get_user_param(prompt_text, default = '')
+
+  prompt = prompt_text
+  prompt += default.length > 0 ? ' [' + default + ']' : ''
+
+  puts prompt
+
+  param = gets.chomp
+  return param.length > 0 ? param : default
+end
+
+options = {}
+
+# configure command-line arguments
+optparse = OptionParser.new do|opts|
+
+  opts.banner = "import.rb will import a directory full of MySQL SQL dumps into a database\n\n"
+  opts.banner += "Usage: import.rb [options]"
+
+  options[:verbose] = false
+  opts.on( '-v', '--verbose', 'Output more information' ) do
+    options[:verbose] = true
+  end
+
+  options[:host] = nil
+  opts.on('-h', '--host HOST', 'import to MySQL HOST') do |host|
+    options[:host] = host
+  end
+
+  options[:user] = nil
+  opts.on('-u', '--user USER', 'import using MySQL USER') do |user|
+    options[:user] = user
+  end
+
+  options[:password] = nil
+  opts.on('-p', '--password PASSWORD', 'import using MySQL PASSWORD') do |password|
+    options[:password] = password
+  end
+
+  options[:database] = nil
+  opts.on('-d', '--database DATABASE', 'import to MySQL DATABASE') do |database|
+    options[:database] = database
+  end
+
+  options[:sleep] = nil
+  opts.on('-s', '--sleep SECONDS', 'sleep for SECONDS between table imports') do |sleep|
+    options[:sleep] = sleep
+  end
+
+  opts.on('-H', '--help', 'Display this screen' ) do
+    puts opts
+    exit
+  end
+end
+
+
+# parse out command-line arguments
+begin
+  optparse.parse!
+rescue OptionParser::InvalidOption, OptionParser::MissingArgument
+  puts 'ERROR: ' + $!.to_s + "\n\n"
+  puts optparse
+  exit
+end
+
+# if options not specified via command-line, ask for them
+if options[:host] == nil:
+  host = get_user_param('Host?', 'localhost')
+else
+  host = options[:host]
+end
+
+if options[:user] == nil:
+  user = get_user_param('User?')
+else
+  user = options[:user]
+end
+
+if options[:password] == nil:
+  password = get_user_param('Password?')
+else
+  password = options[:password]
+end
+
+if options[:database] == nil:
+  database = get_user_param('Database?')
+else
+  database = options[:database]
+end
+
+# do import
+mysql_import_command = 'mysql -u ' + user + ' -p' + password + ' -D ' + database + ' -h ' + host + ' < '
+
+puts "\nImporting...\n"
+
+for file in Dir.entries('.')
+
+  if file != '.' && file != '..'
+    import_command = mysql_import_command + file
+    system(import_command)
+
+    if options[:verbose] == true:
+      print file + "\n"
+    else
+      print '.'
+    end
+
+    if options[:sleep] != nil:
+      sleep options[:sleep].to_i
+    end
+  end
+end
