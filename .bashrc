@@ -4,3 +4,5 @@ alias sup='svn update'
 
 # set for npm
 export NODE_PATH=$HOME/npm_root
+
+# testing
