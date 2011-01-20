@@ -1,4 +1,4 @@
-# cvs helpers
+# cvs helpers (for Drupal.org work)
 alias multiforms_head='cvs -z6 checkout -d multiforms contributions/modules/multiforms'
 alias multiforms_6dev='cvs -z6 checkout -r DRUPAL-6--1 -d multiforms contributions/modules/multiforms'
 
