@@ -19,6 +19,9 @@ alias gs='git status'
 alias grm="git status | grep deleted | awk '{print \$3}' | xargs git rm"
 alias pull='git pull origin master'
 
+# deja-related
+alias djh="cd $HOME/.deja"
+
 # set cvs-related (for Drupal.org work)
 export CVSROOT=:pserver:mcantelon@cvs.drupal.org:/cvs/drupal-contrib
 export CVSEDITOR=/bin/vi
