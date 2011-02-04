@@ -1,0 +1,92 @@
+#!/bin/bash
+#################################################################
+# Script to resize images from the given directory
+# Author: Abhir Joshi <abhir314@gmail.com>
+#################################################################
+
+if [ $# -le 0 ]; then
+    echo "Usage: resize_images.sh <directory_name>"
+    exit 1
+fi
+
+
+echo "Checking if imagemagick tools exist..."
+
+# check if 'identify' and 'convert' executables exist
+which identify > /dev/null
+if [ `echo $?` == "1" ]; then
+    echo "You don't seem to have imagemagick installed.  Can't proceed!"
+    exit 1
+fi
+
+which convert > /dev/null
+if [ `echo $?` == "1" ]; then
+    echo "You don't seem to have imagemagick installed.  Can't proceed!"
+    exit 1
+fi
+
+
+echo "Successful"
+
+
+final_width=1024
+final_height=768
+dir_name="$1"
+
+echo "Resizing images from $dir_name"
+
+for file in "$dir_name"/*.[jJ][pP][gG]; do
+    width=`identify -format %w "$file"`
+    height=`identify -format %h "$file"`
+    if [ $width -gt $height ]; then
+        if [ $width -le $final_width ]; then
+            echo "$file: size = $width"x"$height, size not exceeding maximum! NOT resizing"
+            continue;
+        fi
+        new_height=`echo "$height*$final_width/$width" | bc`
+        file_basename=`basename "$file"`
+        file_dirname=`dirname "$file"`
+        new_file_name=""$file_dirname"/scaled_$file_basename"
+     
+        # resize the image
+        echo "$file: size = $width"x"$height, resizing to" "$final_width"x"$new_height"
+        convert -resize "$finale_width"x"$new_height" "$file" "$new_file_name"
+        
+        # replace the original file ONLY IF the resizing was successful
+        if [ `echo $?` == "0" ]; then
+            # replace the original file with the scaled file
+            rm -f "$file"
+            if [ $? -eq "0" ]; then
+                mv "$new_file_name" "$file"
+            fi
+        else
+            echo "Failed to resize image $file"
+        fi
+    else
+        if [ $height -le $final_height ]; then
+            echo "$file: size = $width"x"$height, size not exceeding maximum! NOT resizing"
+            continue;
+        fi
+        new_width=`echo "$width*$final_height/$height" | bc`
+        file_basename=`basename "$file"`
+        file_dirname=`dirname "$file"`
+        new_file_name=""$file_dirname"/scaled_$file_basename"
+    
+        # resize the image
+        echo "$file: size = $width"x"$height, resizing to $new_width"x"$final_height"    
+        convert -resize "$new_width"x"$final_height" "$file" "$new_file_name"
+
+        # replace the original file ONLY IF the resizing was successful
+        if [ `echo $?` == "0" ]; then
+            # replace the original file with the scaled file
+            rm -f "$file"
+            if [ $? -eq "0" ]; then
+                mv "$new_file_name" "$file"
+            fi
+        else
+            echo "Failed to resize image $file"
+        fi
+    fi
+done
+
+echo "Done"
