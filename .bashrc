@@ -21,6 +21,9 @@ alias pull='git pull origin master'
 
 alias glog='git log --pretty=format:"%h %ad | %s%d [%an]" --graph --date=short'
 
+# hub (https://github.com/defunkt/hub)
+alias git=hub
+
 # deja-related
 alias djh="cd $HOME/.deja"
 
