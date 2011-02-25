@@ -1,6 +1,7 @@
 sy off
 
 cabbr pc !php -l %
+set bs=2
 
 set nohls
 set expandtab
