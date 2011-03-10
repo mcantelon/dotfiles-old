@@ -1,5 +1,5 @@
 <?php
-// $Id: sitealias.drush.inc,v 1.12 2010/01/29 06:14:26 greg1anderson Exp $
+// $Id: sitealias.drush.inc,v 1.28 2011/01/25 19:32:08 greg1anderson Exp $
 
 /**
  * @file
@@ -19,24 +19,26 @@ function sitealias_drush_command() {
   $items['site-alias'] = array(
     'callback' => 'drush_sitealias_print',
     'description' => 'Print site alias records for all known site aliases and local sites.',
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
     'arguments' => array(
       'site' => 'Site specification alias to print',
     ),
     'options' => array(
-      '--full' => 'Print the full alias record for each site.',
-      '--long' => 'Print the long-form site specification for each site.',
-      '--short' => 'Print only the site alias name (default).',
-      '--with-db' => 'Include the databases structure in the full alias record.',
-      '--with-db-url' => 'Include the short-form db-url in the full alias record.',
-      '--no-db' => 'Do not include the database record in the full alias record (default).',
-      '--with-optional' => 'Include optional default items.',
+      'full' => 'Print the full alias record for each site.  Default when aliases are specified on the command line.',
+      'component' => 'Print only the specified element from the full alias record.',
+      'short' => 'Print only the site alias name.  Default when not command line arguments are specified.',
+      'pipe' => 'Print the long-form site specification for each site.',
+      'with-db' => 'Include the databases structure in the full alias record.',
+      'with-db-url' => 'Include the short-form db-url in the full alias record.',
+      'no-db' => 'Do not include the database record in the full alias record (default).',
+      'with-optional' => 'Include optional default items.',
     ),
     'aliases' => array('sa'),
     'examples' => array(
-      'drush site-alias' => 'Print an alias record for the default site.',
-      'drush site-alias dev' => 'Print an alias record for the alias \'dev\'.',
+      'drush site-alias' => 'List all alias records known to drush.',
+      'drush site-alias @dev' => 'Print an alias record for the alias \'dev\'.',
     ),
+    'topics' => array('docs-aliases'),
   );
   return $items;
 }
@@ -48,7 +50,7 @@ function sitealias_drush_command() {
  * is the site specification for the given alias.
  */
 function _drush_sitealias_alias_list() {
-  return drush_get_option('site-aliases', array());
+  return drush_get_context('site-aliases');
 }
 
 /**
@@ -64,8 +66,9 @@ function _drush_sitealias_site_list() {
   foreach ($files as $filename => $info) {
     if ($info->basename == 'settings.php') {
       $alias_record = drush_sitealias_build_record_from_settings_file($filename);
-      $uri = drush_sitealias_site_dir_from_filename($filename);
-      $site_list[$uri] = $alias_record;
+      if (!empty($alias_record)) {
+        $site_list[drush_sitealias_uri_to_site_dir($alias_record['uri'])] = $alias_record;
+      }
     }
   }
   return $site_list;
@@ -75,6 +78,7 @@ function _drush_sitealias_site_list() {
  * Return the list of all site aliases and all local sites.
  */
 function _drush_sitealias_all_list() {
+  drush_sitealias_load_all();
   return array_merge(_drush_sitealias_alias_list(), _drush_sitealias_site_list());
 }
 
@@ -83,18 +87,31 @@ function _drush_sitealias_all_list() {
  * user specified on the command line.  If none were specified,
  * then all are returned.
  */
-function _drush_sitealias_user_specified_list($db_settings_needed = false) {
+function _drush_sitealias_user_specified_list() {
   $command = drush_get_command();
   $specifications = $command['arguments'];
   $site_list = array();
-
+  
+  // Did the user specify --short or --full output?
+  $specified_output_style = drush_get_option(array('full', 'short'), FALSE);
+  
   // Iterate over the arguments and convert them to alias records
   if (!empty($specifications)) {
-    $site_list = drush_sitealias_resolve_sitespecs($specifications, $db_settings_needed);
+    $site_list = drush_sitealias_resolve_sitespecs($specifications);
+    if (!$specified_output_style) {
+      drush_set_option('full', TRUE);
+    }
   }
   // If the user provided no args, then we will return everything.
   else {
     $site_list = _drush_sitealias_all_list();
+    
+    // Filter out the hidden items
+    foreach ($site_list as $site_name => $one_site) {
+      if (array_key_exists('#hidden', $one_site)) {
+        unset($site_list[$site_name]); 
+      }
+    }
   }
 
   return $site_list;
@@ -105,24 +122,40 @@ function _drush_sitealias_user_specified_list($db_settings_needed = false) {
  * specified.
  */
 function drush_sitealias_print() {
+  // Call bootstrap max, unless the caller requested short output
+  if (!drush_get_option('short', FALSE)) {
+    drush_bootstrap_max();
+  }
+  
+  $site_list = _drush_sitealias_user_specified_list();
   $full_output = drush_get_option('full');
   $long_output = drush_get_option('long');
   $with_db = (drush_get_option('with-db') != null) || (drush_get_option('with-db-url') != null);
-  $site_list = _drush_sitealias_user_specified_list($with_db);
 
+  $site_specs = array();
   foreach ($site_list as $site => $alias_record) {
-    if (isset($full_output)) {
-      _drush_sitealias_print_record($alias_record, $site);
+    if (!array_key_exists('site-list', $alias_record)) {
+      $site_specs[] = drush_sitealias_alias_record_to_spec($alias_record, $with_db);
     }
-    elseif (isset($long_output)) {
-      _drush_sitealias_check_sitelist_fields($alias_record);
-      $site_spec = drush_sitealias_alias_record_to_spec($alias_record, $with_db);
-      drush_print($site_spec);
+    if (isset($full_output)) {
+      $component = drush_get_option('component');
+      if ($component) {
+        if (array_key_exists($component, $alias_record)) {
+	  drush_print($alias_record[$component]);
+	}
+	else {
+	  drush_set_error('DRUSH_NO_SUCH_ELEMENT', dt('The element @component was not found in the alias record for @site.', array('@component' => $component, '@site' => $site)));
+	}
+      }
+      else {
+        _drush_sitealias_print_record($alias_record, $site);
+      }
     }
     else {
       drush_print($site);
     }
   }
+  drush_print_pipe(array_unique($site_specs));
 }
 
 /**
@@ -139,14 +172,17 @@ function _drush_sitealias_print_record($alias_record, $site_alias = '') {
 
   // Make sure that the default items have been added for all aliases
   _drush_sitealias_add_static_defaults($alias_record);
-  
-  drush_sitealias_resolve_path_references($alias_record);
-  
+    
   // Include the optional items, if requested
   if ($output_optional_items) {
     _drush_sitealias_add_transient_defaults($alias_record);
   }
 
+  drush_sitealias_resolve_path_references($alias_record);
+
+  if (isset($output_db_url)) {
+    drush_sitealias_add_db_url($alias_record);
+  }
   if (isset($output_db_url) || isset($output_db)) {
     drush_sitealias_add_db_settings($alias_record);
   }
@@ -182,6 +218,7 @@ function _drush_sitealias_print_record($alias_record, $site_alias = '') {
 
   // We don't want the name to go into the output
   unset($alias_record['name']);
+  unset($alias_record['#hidden']);
 
   // We only want to output the 'root' item; don't output the '%root' path alias
   if (array_key_exists('path-aliases', $alias_record) && array_key_exists('%root', $alias_record['path-aliases'])) {
@@ -191,9 +228,19 @@ function _drush_sitealias_print_record($alias_record, $site_alias = '') {
       unset($alias_record['path-aliases']);
     }
   }
+  
+  // Alias names contain an '@' when referenced, but do
+  // not contain an '@' when defined.
+  if (substr($alias_name,0,1) == '@') {
+    $alias_name = substr($alias_name,1);
+  }
+
+  if (!drush_get_option('show-passwords', FALSE)) {
+    drush_unset_recursive($alias_record, 'password');
+  }
 
   $exported_alias = var_export($alias_record, TRUE);
-  drush_print('$options[\'site-aliases\'][\'' . $alias_name . '\'] = ' . $exported_alias . ';');
+  drush_print('$aliases[\'' . $alias_name . '\'] = ' . $exported_alias . ';');
 }
 
 /**
@@ -208,9 +255,11 @@ function _drush_sitealias_print_record($alias_record, $site_alias = '') {
  *   A uri, such as http://domain.com:8080/drupal
  */
 function _drush_sitealias_site_dir_to_uri($site_dir) {
-
+  // Protect IP addresses NN.NN.NN.NN by converting them
+  // temporarily to NN_NN_NN_NN for now.
+  $uri = preg_replace("/([0-9]+)\.([0-9]+)\.([0-9]+)\.([0-9]+)/", "$1_$2_$3_$4", $site_dir);
   // Convert .[0-9]+. into :[0-9]+/
-  $uri = preg_replace("/\.([0-9]+)\./", ":$1/", $site_dir);
+  $uri = preg_replace("/\.([0-9]+)\./", ":$1/", $uri);
   // Convert .[0-9]$ into :[0-9]
   $uri = preg_replace("/\.([0-9]+)$/", ":$1", $uri);
   // Convert .(com|net|org|info). into .(com|net|org|info)/
@@ -229,6 +278,9 @@ function _drush_sitealias_site_dir_to_uri($site_dir) {
   // but it does not work for domains such as .co.jp with no path,
   // and it can fail horribly if someone makes a domain like "info.org".
   // Still, I think this is the best we can do short of consulting DNS.
+
+  // Convert from NN_NN_NN_NN back to NN.NN.NN.NN
+  $uri = preg_replace("/([0-9]+)_([0-9]+)_([0-9]+)_([0-9]+)/", "$1.$2.$3.$4", $site_dir);
 
   return 'http://' . $uri;
 }

@@ -1,5 +1,5 @@
 <?php
-// $Id: svn.inc,v 1.10 2010/01/27 16:29:19 weitzman Exp $
+// $Id: svn.inc,v 1.17 2011/01/26 19:17:40 jonhattan Exp $
 
 /**
  * @file Drush pm SVN extension
@@ -10,26 +10,34 @@ class drush_pm_version_control_svn implements drush_pm_version_control {
   /**
    * Implementation of pre_update().
    */
-  public function pre_update(&$project) {
-    // Check the project directory looks clean
-    if (drush_shell_exec('svn status '. drush_get_option('svnstatusparams') .' '. $project['full_project_path'])) {
-      $output = drush_shell_exec_output();
+  public function pre_update(&$project, $items_to_test = array()) {
+    // If items to test is empty, test everything; otherwise, pass just
+    // the list of files to test to svn status.
+    $args = array_keys($items_to_test);
+    array_unshift($args, 'svn status '. drush_get_option('svnstatusparams') . str_repeat('%s ', count($args)));
+    array_unshift($args, $project['full_project_path']);
+    if (call_user_func_array('drush_shell_cd_and_exec', $args)) {
+      $output = preg_grep('/^[ ACDMRX?!~][ CM][ L][ +][ SX][ K]/', drush_shell_exec_output());
       if (!empty($output)) {
-        return drush_set_error('DRUSH_PM_SVN_LOCAL_CHANGES', dt("The SVN working copy at !path appears to have uncommmitted changes (see below). Please commit or revert these changes before continuing:\n!output", array('!path' => $project['full_project_path'], '!output' => implode("\n", $output))));
+        return drush_set_error('DRUSH_PM_SVN_LOCAL_CHANGES', dt("The SVN working copy at !path appears to have uncommitted changes (see below). Please commit or revert these changes before continuing:\n!output", array('!path' => $project['full_project_path'], '!output' => implode("\n", $output))));
       }
     }
     else {
-      return drush_set_error('DRUSH_PM_SVN_NOT_FOUND', dt("Drush was unable to get the svn status on !path. Check that you have Subversion \ninstalled and that this directory is a subversion working copy.\nThe specific errors are below:\n!errors", array('!path' => $project['full_project_path'], '!errors' => implode("\n", drush_shell_exec_output()))));
+      return drush_set_error('DRUSH_PM_SVN_NOT_FOUND', dt("Drush was unable to get the svn status on !path.\nThe specific errors are below:\n!errors", array('!path' => $project['full_project_path'], '!errors' => implode("\n", drush_shell_exec_output()))));
     }
+
     // Check for incoming updates
-    if (drush_shell_exec('svn status -u '. drush_get_option('svnstatusparams') .' '. $project['full_project_path'])) {
-      $output = preg_grep('/^Status against revision:\s*[0-9]*$/', drush_shell_exec_output(), PREG_GREP_INVERT);
+    $args = array_keys($items_to_test);
+    array_unshift($args, 'svn status -u '. drush_get_option('svnstatusparams') . str_repeat('%s ', count($args)));
+    array_unshift($args, $project['full_project_path']);
+    if (call_user_func_array('drush_shell_cd_and_exec', $args)) {
+      $output = preg_grep('/\*/', drush_shell_exec_output());
       if (!empty($output)) {
         return drush_set_error('DRUSH_PM_SVN_REMOTE_CHANGES', dt("The SVN working copy at !path appears to be out of date with the repository (see below). Please run 'svn update' to pull down changes before continuing:\n!output", array('!path' => $project['full_project_path'], '!output' => implode("\n", $output))));
       }
     }
     else {
-      return drush_set_error('DRUSH_PM_SVN_NOT_FOUND', dt("Drush was unable to get the svn remote status on !path. Check that you have Subversion \ninstalled, that this directory is a subversion working copy and that you have connectivity to the repository.\nThe specific errors are below:\n!errors", array('!path' => $project['full_project_path'], '!errors' => implode("\n", drush_shell_exec_output()))));
+      return drush_set_error('DRUSH_PM_SVN_NOT_FOUND', dt("Drush was unable to get the svn remote status on !path. Check that you have connectivity to the repository.\nThe specific errors are below:\n!errors", array('!path' => $project['full_project_path'], '!errors' => implode("\n", drush_shell_exec_output()))));
     }
     return TRUE;
   }
@@ -41,7 +49,7 @@ class drush_pm_version_control_svn implements drush_pm_version_control {
     if (drush_shell_exec('svn revert '. drush_get_option('svnrevertparams') .' '. $project['full_project_path'])) {
       $output = drush_shell_exec_output();
       if (!empty($output)) {
-        return drush_set_error('DRUSH_PM_SVN_LOCAL_CHANGES', dt("The SVN working copy at !path appears to have uncommmitted changes (see below). Please commit or revert these changes before continuing:\n!output", array('!path' => $project['full_project_path'], '!output' => implode("\n", $output))));
+        return drush_set_error('DRUSH_PM_SVN_LOCAL_CHANGES', dt("The SVN working copy at !path appears to have uncommitted changes (see below). Please commit or revert these changes before continuing:\n!output", array('!path' => $project['full_project_path'], '!output' => implode("\n", $output))));
       }
     }
     else {
@@ -120,5 +128,9 @@ class drush_pm_version_control_svn implements drush_pm_version_control {
     else {
       drush_print(dt("You should consider committing the new code to your Subversion repository.\nIf this version becomes undesireable, use Subversion to roll back."));
     }
+  }
+
+  public static function reserved_files() {
+    return array('.svn');
   }
 }

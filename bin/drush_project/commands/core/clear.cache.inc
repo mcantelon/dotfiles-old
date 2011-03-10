@@ -21,8 +21,13 @@
     case 7:
     default:
       $types = drush_cache_clear_types();
+      // Check if the provided type ($type) is a valid cache type.
+      if ($type && !key_exists($type, $types)) {
+        return drush_set_error(dt("'!type' cache is not a valid cache type", array('!type' => $type)));
+      }
+
       if ($type) {
-        drush_op('call_user_func', $types[$type]);
+        drush_op($types[$type]);
         drush_log(dt("'!name' cache was cleared", array('!name' => $type)), 'success');
       }
       else {
@@ -39,13 +44,30 @@
 function drush_cache_clear_types() {
   $types = array(
     'all' => 'drupal_flush_all_caches',
-    'theme' => 'drush_cache_clear_theme_registry',
+    'theme registry' => 'drush_cache_clear_theme_registry',
     'menu' => 'menu_rebuild',
     'css+js' => 'drush_cache_clear_css_js',
+    'block' => 'drush_cache_clear_block',
+    'module list' => 'drush_get_modules',
+    'theme list' => 'drush_get_themes',
   );
+  if (drush_drupal_major_version() >= 7) {
+    $types['registry'] = 'registry_update';
+  }
+  elseif (drush_drupal_major_version() == 6 && module_exists('autoload')) {
+    // TODO: move this to autoload module. 
+    $types['registry'] = 'autoload_registry_update';
+  }
   if (count(module_implements('node_grants'))) {
     $types['nodeaccess'] = 'node_access_rebuild';
   }
+
+  // Include the appropriate environment engine, so callbacks can use core
+  // version specific cache clearing functions directly.
+  drush_include_engine('drupal', 'environment');
+
+  // Command files may customize $types as desired.
+  drush_command_invoke_all_ref('drush_cache_clear', $types);
   return $types;
 }
 
@@ -58,3 +80,11 @@ function drush_cache_clear_css_js() {
   drupal_clear_css_cache();
   drupal_clear_js_cache();
 }
+
+/**
+ * Clear the cache of the block output.
+ */
+function drush_cache_clear_block() {
+  cache_clear_all(NULL, 'cache_block');
+}
+

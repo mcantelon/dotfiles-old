@@ -1,5 +1,5 @@
 <?php
-// $Id: update_7.inc,v 1.24 2010/02/19 15:45:14 adrian Exp $
+// $Id: update_7.inc,v 1.30 2010/12/30 18:28:08 greg1anderson Exp $
 /**
  * @file
  *   Update.php for provisioned sites.
@@ -145,6 +145,7 @@ function update_main_prepare() {
   require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
   require_once DRUPAL_ROOT . '/includes/update.inc';
   require_once DRUPAL_ROOT . '/includes/common.inc';
+  require_once DRUPAL_ROOT . '/includes/file.inc';
   require_once DRUPAL_ROOT . '/includes/entity.inc';
   include_once DRUPAL_ROOT . '/includes/unicode.inc';
 
@@ -152,7 +153,6 @@ function update_main_prepare() {
   drupal_bootstrap(DRUPAL_BOOTSTRAP_SESSION);
 
   require_once DRUPAL_ROOT . '/includes/install.inc';
-  require_once DRUPAL_ROOT . '/includes/file.inc';
   require_once DRUPAL_ROOT . '/modules/system/system.install';
 
   // Load module basics.
@@ -186,10 +186,6 @@ function update_main_prepare() {
   drupal_maintenance_theme();
 
   drush_errors_on();
-
-  // Rescan and repopulate the system table to ensure we have a full picture
-  // of the platform.
-  drush_get_projects();
 
   include_once DRUPAL_ROOT . '/includes/batch.inc';
   drupal_load_updates();
@@ -238,7 +234,7 @@ function update_main() {
     }
 
     if (!drush_confirm(dt('Do you wish to run all pending updates?'))) {
-      drush_die('Aborting.');
+      return drush_user_abort();
     }
 
     drush_update_batch($start);
@@ -271,8 +267,6 @@ function _update_batch_command($id) {
  *   processing page.
  */
 function drush_update_batch($start) {
-  variable_set('maintenance_mode', TRUE);
-
   // Resolve any update dependencies to determine the actual updates that will
   // be run and the order they will be run in.
   $updates = update_resolve_dependencies($start);
@@ -318,8 +312,6 @@ function drush_update_batch($start) {
 
 
 function drush_update_finished($success, $results, $operations) {
-  // Clear the caches in case the data has been updated.
-  drupal_flush_all_caches();
-  variable_del('maintenance_mode');
+  // Nothing to do here. All caches already cleared. Kept as documentation of 'finished' callback.
 }
 

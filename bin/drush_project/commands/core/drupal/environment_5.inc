@@ -1,5 +1,5 @@
 <?php
-// $Id: environment_5.inc,v 1.7 2010/02/22 13:35:14 weitzman Exp $
+// $Id: environment_5.inc,v 1.13 2010/11/10 02:55:41 weitzman Exp $
 /**
  * @file
  *   Specific functions for a drupal 5 environment.
@@ -7,6 +7,15 @@
  *   or environment_X.inc depending on which version of drupal drush
  *   is called from.
  */
+
+/**
+ * Return the list of modules required by drupal.
+ *
+ * We use that function name for onward compatibility with drupal 6 and 7.
+ */
+function drupal_required_modules() {
+  return array('block', 'filter', 'node', 'system', 'user', 'watchdog');
+}
 
 /**
  * Get complete information for all available modules.
@@ -48,7 +57,7 @@ function drush_get_modules() {
 function drush_check_module_dependencies($modules, $module_info) {
   $status = array();
   foreach ($modules as $key => $module) {
-    $dependencies = $module_info[$module]->info['dependencies'];
+    $dependencies = array_reverse($module_info[$module]->info['dependencies']);
     $unmet_dependencies = array_diff($dependencies, array_keys($module_info));
     if (!empty($unmet_dependencies)) {
       $status[$key]['error'] = array(
@@ -90,8 +99,21 @@ function drush_module_dependents($modules, $module_info) {
  *   Array of module names
  */
 function drush_module_enable($modules) {
-  // drupal_install_modules() will call hook_install() if necessary and afterwards module_enable().
-  drupal_install_modules($modules);
+  // In Drupal 5, drupal_install_modules() only installs new modules,
+  // and does not enable previously installed and disabled modules.
+  $install_modules = array();
+  $enable_modules = array();
+
+  foreach ($modules as $module) {
+    if (drupal_get_installed_schema_version($module) == SCHEMA_UNINSTALLED) {
+      $install_modules[] = $module;
+    }
+    else {
+      $enable_modules[] = $module;
+    }
+  }
+  drupal_install_modules($install_modules);
+  module_enable($enable_modules);
 }
 
 /**
@@ -125,7 +147,7 @@ function drush_module_uninstall($modules) {
  * the form submit (such as admin_role) are completed.
  */
 function drush_system_modules_form_submit($active_modules) {
-  require_once('./'. drupal_get_path('module', 'system') .'/system.module');
+  require_once './'. drupal_get_path('module', 'system') .'/system.module';
   $form_state = array('values' => array('status' => $active_modules));
   drupal_execute('system_modules', $form_state);
 }
@@ -152,22 +174,50 @@ function drush_get_themes() {
 /**
  * Enable a list of themes.
  *
+ * This function is based on system_themes_submit().
+ *
+ * @see system_themes_submit()
  * @param $themes
  *  Array of theme names.
  */
 function drush_theme_enable($themes) {
+  foreach ($themes as $theme) {
+    system_initialize_theme_blocks($theme);
+  }
   $placeholder = implode(',', array_fill(0, count($themes), "'%s'"));
   db_query("UPDATE {system} SET status = 1 WHERE type = 'theme' AND name IN (".$placeholder.")", $themes);
+  menu_rebuild();
 }
 
 /**
  * Disable a list of themes.
  *
+ * This function is based on system_themes_submit().
+ *
+ * @see system_themes_submit()
  * @param $themes
  *  Array of theme names.
  */
 function drush_theme_disable($themes) {
   $placeholder = implode(',', array_fill(0, count($themes), "'%s'"));
   db_query("UPDATE {system} SET status = 0 WHERE type = 'theme' AND name IN (".$placeholder.")", $themes);
+  menu_rebuild();
 }
 
+/**
+ * Helper function to obtain the severity levels based on Drupal version.
+ *
+ * This is a copy of watchdog_severity_levels() without t().
+ *
+ * Severity levels, as defined in RFC 3164: http://www.ietf.org/rfc/rfc3164.txt.
+ *
+ * @return
+ *   Array of watchdog severity levels.
+ */
+function core_watchdog_severity_levels() {
+  return array(
+    WATCHDOG_NOTICE => 'notice',
+    WATCHDOG_WARNING => 'warning',
+    WATCHDOG_ERROR => 'error'
+  );
+}

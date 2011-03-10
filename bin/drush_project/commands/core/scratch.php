@@ -10,12 +10,11 @@
  * using `drush script scratch.php`. That command will bootstrap your drupal
  * site and then run the php below.
  *
- * The script command enables to store your script files wherever you wish and
+ * The script command enables you to store your script files wherever you wish and
  * will help you list all of them should you collection grow. See its help.
  *
  */
 
 // Just some ideas to get the juices flowing.
-drush_print_r(menu_get_item());
 drush_print_r(user_roles());
 drush_print_r($GLOBALS['user']);

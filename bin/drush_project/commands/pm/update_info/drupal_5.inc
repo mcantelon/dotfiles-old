@@ -1,5 +1,5 @@
 <?php
-// $Id: drupal_5.inc,v 1.7 2010/01/27 16:29:19 weitzman Exp $
+// $Id: drupal_5.inc,v 1.10 2010/11/24 10:00:02 jonhattan Exp $
 
 function pm_update_filter(&$project) {
   $update = FALSE;
@@ -56,9 +56,23 @@ function _pm_get_update_info($projects = NULL) {
   if (!cache_get('update_status_info', 'cache')) {
     _pm_refresh();
   }
-  $info = update_status_get_available();
+
+  $info = update_status_get_available(TRUE);
+
+  // Force to invalidate some update_status caches that are only cleared
+  // when visiting update status report page.
+  _update_status_cache_clear('update_status_project_data');
+  _update_status_cache_clear('update_status_project_projects');
+
   $data = update_status_calculate_project_data($info);
-  $data = pm_get_project_path($data, 'modules');
+  // update_status for drupal 5 can only process modules,
+  // so we need to add this here for backwards compatibility
+  // or pm_get_project_path() will fail
+  foreach ($data as $project_name => $project_data) {
+    $data[$project_name]['project_type'] = 'module';
+  }
+  $data = _pm_get_project_path($data, 'modules');
+
   return $data;
 }
 

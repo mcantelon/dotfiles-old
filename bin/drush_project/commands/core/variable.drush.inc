@@ -1,5 +1,5 @@
 <?php
-// $Id: variable.drush.inc,v 1.17 2010/02/22 21:33:15 weitzman Exp $
+// $Id: variable.drush.inc,v 1.21 2011/01/03 05:48:08 greg1anderson Exp $
 
 /**
  * Implementation of hook_drush_help().
@@ -49,7 +49,7 @@ function variable_drush_command() {
       'drush vget user' => 'List all variables beginning with the string "user".',
     ),
     'options' => array(
-      '--pipe' => 'Use var_export() to emit executable PHP. Useful for pasting into code.',
+      'pipe' => 'Use var_export() to emit executable PHP. Useful for pasting into code.',
     ),
     'aliases' => array('vget'),
   );
@@ -60,8 +60,8 @@ function variable_drush_command() {
       'value' => 'The value to assign to the variable.',
     ),
     'options' => array(
-      '--yes' => 'Skip confirmation if only one variable name matches.',
-      '--always-set' => 'Always skip confirmation.',
+      'yes' => 'Skip confirmation if only one variable name matches.',
+      'always-set' => 'Always skip confirmation.',
     ),
     'examples' => array(
       'drush vset --yes preprocess_css 1' => 'Set the preprocess_css variable to true. Skip confirmation if variable already exists.',
@@ -76,7 +76,7 @@ function variable_drush_command() {
       'name' => 'The name of a variable or the first few letters of its name.',
     ),
     'options' => array(
-      '--yes' => 'Skip confirmation if only one variable name matches.',
+      'yes' => 'Skip confirmation if only one variable name matches.',
     ),
     'examples' => array(
       'drush vdel user_pictures' => 'Delete the user_pictures variable.',
@@ -94,26 +94,34 @@ function variable_drush_command() {
  */
 function drush_variable_get() {
   global $conf;
-  $args = func_get_args();
-  foreach(array_keys($conf) as $name) {
-    if (strstr($name, $args[0])) {
-      $value = $conf[$name];
-      drush_print_pipe("\$variables['$name'] = ". var_export($value, TRUE). ";\n");
+  $found = FALSE;
+  
+  $keys = array_keys($conf);
+  if ($args = func_get_args()) {
+    $keys = preg_grep("/{$args[0]}/", $keys);
+  }
+  foreach ($keys as $name) {
+    $value = $conf[$name];
+    drush_print_pipe("\$variables['$name'] = ". var_export($value, TRUE). ";\n");
 
-      if ($value === TRUE) {
-        $value = 'TRUE';
-      }
-      elseif ($value === FALSE) {
-        $value = 'FALSE';
-      }
-      elseif (is_string($value)) {
-        $value = '"' . $value . '"';
-      }
-      elseif (is_array($value) || is_object($value)) {
-        $value = print_r($value, TRUE);
-      }
-      drush_print($name . ': ' . $value);
+    if ($value === TRUE) {
+      $value = 'TRUE';
     }
+    elseif ($value === FALSE) {
+      $value = 'FALSE';
+    }
+    elseif (is_string($value)) {
+      $value = '"' . $value . '"';
+    }
+    elseif (is_array($value) || is_object($value)) {
+      $value = print_r($value, TRUE);
+    }
+    drush_print($name . ': ' . $value);
+    $found = TRUE;
+  }
+  
+  if (!$found) {
+    return drush_set_error('No matching variable found.');
   }
 }
 
@@ -202,4 +210,3 @@ function drush_variable_delete() {
 function drush_variable_like($arg) {
   return drush_db_select('variable', 'name', 'name LIKE :keyword', array(':keyword' => $arg . '%'), NULL, NULL, 'name');
 }
-

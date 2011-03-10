@@ -36,7 +36,7 @@
  * @copyright 2002-2005 Richard Heyes
  * @copyright 2006-2008 Jan Schneider
  * @license   http://www.debian.org/misc/bsd.license  BSD License (3 Clause)
- * @version   CVS: $Id: Table.php,v 1.27 2008/10/20 22:22:13 yunosh Exp $
+ * @version   CVS: $Id$
  * @link      http://pear.php.net/package/Console_Table
  */
 
@@ -177,9 +177,6 @@ class Console_Table
         $this->_border       = $border;
         $this->_padding      = $padding;
         $this->_ansiColor    = $color;
-        if ($this->_ansiColor) {
-            include_once 'Console/Color.php';
-        }
         if (!empty($charset)) {
             $this->setCharset($charset);
         }
@@ -781,6 +778,7 @@ class Console_Table
 
         // Strip ANSI color codes if requested.
         if ($this->_ansiColor) {
+            include_once 'Console/Color.php';
             $str = Console_Color::strip($str);
         }
 

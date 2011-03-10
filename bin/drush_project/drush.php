@@ -1,6 +1,6 @@
 #!/usr/bin/env php
 <?php
-// $Id: drush.php,v 1.86 2010/02/21 05:33:28 weitzman Exp $
+// $Id: drush.php,v 1.96 2011/01/17 12:34:17 weitzman Exp $
 
 /**
  * @file
@@ -10,7 +10,7 @@
  */
 // Terminate immediately unless invoked as a command line script
 if (!drush_verify_cli()) {
-  die('drush.php is designed to run via the command line.');
+  die('drush is designed to run via the command line.');
 }
 
 // Check supported version of PHP.
@@ -35,7 +35,9 @@ require_once DRUSH_BASE_PATH . '/includes/sitealias.inc';
 drush_set_context('argc', $GLOBALS['argc']);
 drush_set_context('argv', $GLOBALS['argv']);
 
+// Set an error handler and a shutdown function
 set_error_handler('drush_error_handler');
+register_shutdown_function('drush_shutdown');
 
 exit(drush_main());
 
@@ -65,15 +67,18 @@ function drush_verify_cli() {
  *   Whatever the given command returns.
  */
 function drush_main() {
-  $phases = _drush_bootstrap_phases();
-  $completed_phases = array();
+  $phases = _drush_bootstrap_phases(FALSE, TRUE);
+  drush_set_context('DRUSH_BOOTSTRAP_PHASE', DRUSH_BOOTSTRAP_NONE);
+
+  // We need some global options processed at this early stage. Namely --debug.
+  drush_parse_args();
+  _drush_bootstrap_global_options();
 
   $return = '';
   $command_found = FALSE;
 
   foreach ($phases as $phase) {
-    if (drush_bootstrap($phase)) {
-      $completed_phases[$phase] = TRUE;
+    if (drush_bootstrap_to_phase($phase)) {
       $command = drush_parse_command();
 
       // Process a remote command if 'remote-host' option is set.
@@ -83,11 +88,23 @@ function drush_main() {
       }
 
       if (is_array($command)) {
-        if (array_key_exists($command['bootstrap'], $completed_phases) && empty($command['bootstrap_errors'])) {
+        $bootstrap_result = drush_bootstrap_to_phase($command['bootstrap']);
+        drush_enforce_requirement_bootstrap_phase($command);
+        drush_enforce_requirement_core($command);
+        drush_enforce_requirement_drupal_dependencies($command);
+        drush_enforce_requirement_drush_dependencies($command);
+
+        if ($bootstrap_result && empty($command['bootstrap_errors'])) {
           drush_log(dt("Found command: !command (commandfile=!commandfile)", array('!command' => $command['command'], '!commandfile' => $command['commandfile'])), 'bootstrap');
+
           $command_found = TRUE;
           // Dispatch the command(s).
           $return = drush_dispatch($command);
+
+	  // prevent a '1' at the end of the output
+	  if ($return === TRUE) {
+	    $return = '';
+	  }
 
           if (drush_get_context('DRUSH_DEBUG')) {
             drush_print_timers();
@@ -114,9 +131,10 @@ function drush_main() {
     elseif (!empty($args)) {
       drush_set_error('DRUSH_COMMAND_NOT_FOUND', dt("The drush command '!args' could not be found.", array('!args' => $args)));
     }
-    else {
-      // This can occur if we get an error during _drush_bootstrap_drush_validate();
-      drush_set_error('DRUSH_COULD_NOT_EXECUTE', dt("Drush could not execute."));
+    // Set errors that ocurred in the bootstrap phases.
+    $errors = drush_get_context('DRUSH_BOOTSTRAP_ERRORS', array());
+    foreach ($errors as $code => $message) {
+      drush_set_error($code, $message);
     }
   }
 
@@ -146,12 +164,18 @@ function drush_shutdown() {
   // Mysteriously make $user available during sess_write(). Avoids a NOTICE.
   global $user;
 
-  if (!drush_get_context('DRUSH_EXECUTION_COMPLETED', FALSE)) {
+  if (!drush_get_context('DRUSH_EXECUTION_COMPLETED', FALSE) && !drush_get_context('DRUSH_USER_ABORT', FALSE)) {
+    $php_error_message = '';
+    if ($error = error_get_last()) {
+      $php_error_message = "\n" . dt('Error: !message in !file, line !line', array('!message' => $error['message'], '!file' => $error['file'], '!line' => $error['line']));
+    }
     // We did not reach the end of the drush_main function,
     // this generally means somewhere in the code a call to exit(),
     // was made. We catch this, so that we can trigger an error in
     // those cases.
-    drush_set_error("DRUSH_NOT_COMPLETED", dt("Drush command could not be completed."));
+    drush_set_error("DRUSH_NOT_COMPLETED", dt("Drush command terminated abnormally due to an unrecoverable error.!message", array('!message' => $php_error_message)));
+    // Attempt to give the user some advice about how to fix the problem
+    _drush_postmortem();
   }
 
   $phase = drush_get_context('DRUSH_BOOTSTRAP_PHASE');
@@ -176,6 +200,14 @@ function drush_shutdown() {
   if (drush_get_context('DRUSH_PIPE')) {
     drush_pipe_output();
   }
+
+  /**
+   * For now, drush skips end of page processing on D7. Doing so could write
+   * cache entries to module_implements and lookup_cache that don't match web requests.
+   */
+  // if (drush_drupal_major_version() >= 7 && function_exists('drupal_page_footer')) {
+    // drupal_page_footer();
+  // }
 
   // this way drush_return_status will always be the last shutdown function (unless other shutdown functions register shutdown functions...)
   // and won't prevent other registered shutdown functions (IE from numerous cron methods) from running by calling exit() before they get a chance.
@@ -206,12 +238,19 @@ function drush_drupal_login($drush_user) {
 
   if (empty($user)) {
     if (is_numeric($drush_user)) {
-      $message = dt('Could not login with user ID #%user.', array('%user' => $drush_user));
+      $message = dt('Could not login with user ID #!user.', array('!user' => $drush_user));
+      if ($drush_user === 0) {
+        $message .= ' ' . dt('This is typically caused by importing a MySQL database dump from a faulty tool which re-numbered the anonymous user ID in the users table. See !link for help recovering from this situation.', array('!link' => 'http://drupal.org/node/1029506'));
+      }
     }
     else {
-      $message = dt('Could not login with user account `%user\'.', array('%user' => $drush_user));
+      $message = dt('Could not login with user account `!user\'.', array('!user' => $drush_user));
     }
     return drush_set_error('DRUPAL_USER_LOGIN_FAILED', $message);
+  }
+  else {
+    $name = $user->name ? $user->name : variable_get('anonymous', t('Anonymous'));
+    drush_log(dt('Successfully logged into Drupal as !name', array('!name' => $name . " (uid=$user->uid)")), 'bootstrap');
   }
 
   return TRUE;
