@@ -26,6 +26,11 @@ alias git=hub
 # deja-related
 alias djh="cd $HOME/.deja"
 
+# wrapper for JShint
+function hint() {
+  jshint $1 --config $HOME/.jshint.json
+}
+
 # set cvs-related (for Drupal.org work)
 export CVSROOT=:pserver:mcantelon@cvs.drupal.org:/cvs/drupal-contrib
 export CVSEDITOR=/bin/vi
