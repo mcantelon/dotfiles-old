@@ -38,5 +38,8 @@ export CVSEDITOR=/bin/vi
 # set for npm
 export NODE_PATH=$HOME/npm_root
 
+# set for n
+export N_PREFIX=$HOME/local
+
 # load site-specific aliases, etc.
 source $HOME/.bash_local
