@@ -35,9 +35,6 @@ function hint() {
 export CVSROOT=:pserver:mcantelon@cvs.drupal.org:/cvs/drupal-contrib
 export CVSEDITOR=/bin/vi
 
-# set for npm
-export NODE_PATH=$HOME/npm_root
-
 # set for n
 export N_PREFIX=$HOME/local
 
