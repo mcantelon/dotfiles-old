@@ -31,6 +31,9 @@ function hint() {
   jshint $1 --config $HOME/.jshint.json
 }
 
+# PATH tweak for npm, etc.
+export PATH=$PATH:/usr/local/bin
+
 # set cvs-related (for Drupal.org work)
 export CVSROOT=:pserver:mcantelon@cvs.drupal.org:/cvs/drupal-contrib
 export CVSEDITOR=/bin/vi
