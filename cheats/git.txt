@@ -1,0 +1,8 @@
+List local branches:
+
+    git branch
+
+List remote branches:
+
+    git remote show origin
+
