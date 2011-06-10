@@ -17,3 +17,15 @@ Create tag
 Push tag:
 
   git push origin 6.x-1.0
+
+List remotes:
+
+  git remote -v
+
+Delete remote:
+
+  git remote rm experimental
+
+Add remote:
+
+  git remote add origin git://github.com/mcantelon/dotfiles.git
