@@ -1,0 +1,19 @@
+Get repo info (similar to svn info):
+
+  git remote show origin
+
+See available branches:
+
+  git branch -a
+
+Create local tracking branch:
+
+  git checkout -b experimental origin/experimental
+
+Create tag
+
+  git tag 6.x-1.0
+
+Push tag:
+
+  git push origin 6.x-1.0
