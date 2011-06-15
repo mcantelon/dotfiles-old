@@ -1,8 +1,31 @@
-List local branches:
+Get repo info (similar to svn info):
 
-    git branch
+  git remote show origin
 
-List remote branches:
+See available branches:
 
-    git remote show origin
+  git branch -a
 
+Create local tracking branch:
+
+  git checkout -b experimental origin/experimental
+
+Create tag
+
+  git tag 6.x-1.0
+
+Push tag:
+
+  git push origin 6.x-1.0
+
+List remotes:
+
+  git remote -v
+
+Delete remote:
+
+  git remote rm experimental
+
+Add remote:
+
+  git remote add origin git://github.com/mcantelon/dotfiles.git
