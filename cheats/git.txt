@@ -29,3 +29,7 @@ Delete remote:
 Add remote:
 
   git remote add origin git://github.com/mcantelon/dotfiles.git
+
+Committing a resolved conflict:
+
+  gc -a -m "commit message"
