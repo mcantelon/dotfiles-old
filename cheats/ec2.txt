@@ -1,0 +1,48 @@
+Good guide at https://help.ubuntu.com/community/EC2StartersGuide
+
+Make sure any keys used for SSHing have correct permissions:
+
+  chmod a-r ~/.ssh/<keyfile>
+  chmod u+r ~/.ssh/<keyfile>
+
+Add to ~/.bashrc:
+
+  export EC2_CERT=<location of X.509 cert>
+  export EC2_PRIVATE_KEY=<location of X.509 private key>
+  export JAVA_HOME=/usr/lib/jvm/java-6-openjdk/
+
+Read in .bashrc:
+
+  source ~/.bashrc
+
+List available instances via:
+
+  ec2-describe-images -o self -o amazon
+
+Run something with your own AMI:
+
+  ec2-run-instances ami-aaec14c3
+
+Generate keypair (???):
+
+  ec2-add-keypair ec2-keypair > ec2-keypair.pem
+
+Run something with stock AMI (designating an instance size):
+
+  ec2-run-instances <ami ID> -k ec2-keypair -t c1.xlarge
+
+See status of instances:
+
+  ec2-describe-instances
+
+Authorize SSH:
+
+  ec2-authorize default -p 22
+
+Then you can SSH in using:
+
+  ssh -i <location of key> ec2-user@address.of.instance
+
+Terminate instance (ID is in format: i-xxxxxxxx):
+
+  ec2-terminate-instances <instance ID>
