@@ -1,5 +1,5 @@
 # cvs helpers (for Drupal.org work)
-alias multiforms='git clone mcantelon@git.drupal.org:project/multiforms'
+alias multiforms='git clone --branch 6.x-1.x http://git.drupal.org/project/multiforms.git'
 
 # subversion helpers
 alias sst='svn status'
