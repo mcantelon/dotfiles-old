@@ -30,6 +30,11 @@ optparse = OptionParser.new do|opts|
     options[:host] = host
   end
 
+  options[:port] = nil
+  opts.on('-P', '--port PORT', 'import to MySQL PORT') do |port|
+    options[:port] = port
+  end
+
   options[:user] = nil
   opts.on('-u', '--user USER', 'import using MySQL USER') do |user|
     options[:user] = user
@@ -73,6 +78,10 @@ else
   host = options[:host]
 end
 
+if options[:port] == nil:
+  port = 3306
+end
+
 if options[:user] == nil:
   user = get_user_param('User?')
 else
@@ -92,7 +101,7 @@ else
 end
 
 # do import
-mysql_import_command = 'mysql -u ' + user + ' -p' + password + ' -D ' + database + ' -h ' + host + ' < '
+mysql_import_command = 'mysql -u ' + user + ' -p' + password + ' -D ' + database + ' -h ' + host + ' -P ' + port + ' < '
 
 puts "\nImporting...\n"
 
