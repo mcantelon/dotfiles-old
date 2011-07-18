@@ -1,7 +1,8 @@
 Good guide at https://help.ubuntu.com/community/EC2StartersGuide
 
-Quick guide to automated creation/deployment:
+Quick guide to semi-automated creation/deployment:
 
+  # make sure your .bashrc is set up to set env variables (see later in this file)
   ec2-add-keypair test-keypair > test-keypair.pem
   ec2-run-instances -k test-keypair ami-8c1fece5
   ec2-describe-instances # to get public DNS of machine
@@ -12,6 +13,12 @@ Quick guide to automated creation/deployment:
   # use sudo visudo to comment out line "Defaults    requiretty"
   vi setup_commands.txt
   ssh -i ~/.ssh/test-keypair.pem ec2-user@ec2-50-16-105-234.compute-1.amazonaws.com < setup_commands.txt
+  scp -i ~/.ssh/test-keypair.pem SOMEFILE ec2-user@ec2-50-16-105-234.compute-1.amazonaws.com:/home/ec2-user
+  # create and associate an elastic IP
+  ec2-allocate-address
+  ec2-associate-address 107.20.254.213 -i i-ff97529e
+  # once you're ready to kill it...
+  ec2-terminate-instances i-ff97529e
 
 Make sure any keys used for SSHing have correct permissions:
 
