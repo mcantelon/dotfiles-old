@@ -45,3 +45,6 @@ if [ -f $HOME/.bash_local ];
 then
   source $HOME/.bash_local
 fi
+
+# tweak bash prompt
+export PS1='\h|\W$ '
