@@ -40,11 +40,11 @@ export PATH=$PATH:/usr/local/bin
 export CVSROOT=:pserver:mcantelon@cvs.drupal.org:/cvs/drupal-contrib
 export CVSEDITOR=/bin/vi
 
+# tweak bash prompt
+export PS1='\h|\W$ '
+
 # load site-specific aliases, etc.
 if [ -f $HOME/.bash_local ];
 then
   source $HOME/.bash_local
 fi
-
-# tweak bash prompt
-export PS1='\h|\W$ '
