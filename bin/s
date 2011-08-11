@@ -1,2 +1,3 @@
 #!/bin/bash
+#
 grep -n -r "$1" * | grep -v .svn | awk '{print substr($0,0,120)}'
