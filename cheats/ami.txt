@@ -1,23 +1,36 @@
 Make Amazon AMI from EC2 instance
 
-1. Create, launch, and log into EC2 instance that you want to use as the basis for your AMI
-2. Put your X.509 cert and private key (X.509 private key, not key used for logging into your EC2 instance) into /mnt (so they don't get included in AMI)
-3. Get AMI tools:
-   wget http://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.zip
-   unzip ec2-ami-tools.zip
-   mv ec2-ami-tools-1.3-66634 ec2-ami
-4. Configure .bashrc so the tools' bin path is in $PATH and AMI tool location is registered:
-   export PATH=$PATH:/home/ec2-user/ec2-ami/bin
-   export EC2_AMITOOL_HOME=/home/ec2-user/ec2-ami
-5. Set environment variables for X.509 cert and private key file locations
-   export EC2_PRIVATE_KEY=YOUR-PATH-TO-PRIVATE-KEY
-   export EC2_CERT= YOUR-PATH-TO-X.509-CERTIFICATE
-6. Become root, but load in environment variables from .bashrc
-   sudo su
-   source .bashrc
-7. Bundle the EC2 instance (AWS account number is on security credential page)
-   ec2-bundle-vol -d /mnt -k $EC2_PRIVATE_KEY -c $EC2_CERT -u AWS_ACCOUNT_NUMBER -r i386
-8. Upload bundle to S3 (you'll need Access Key ID and Secret Access Key from security credentials page)... bucket will be auto-created, but don't use punctuation in bucket name:
-ec2-upload-bundle -b YOUR-S3-BUCKET -m /mnt/image.manifest.xml -a YOUR-AWS-ACCESS-ID -s YOUR-AWS-ACCESS-KEY
+1. Create, launch, and log into EC2 instance that you want to use as the basis
+   for your AMI
+2. Put your X.509 cert and private key into the /mnt directory
+   [NOTE: X.509 private key, not key used for logging into your EC2 instance:
+   generate one at Account/Security Credentials if need be. Also, the key goes
+   into /mnt because this directory won't get included in the AMI.]
+3. Change to a working directory of some kind and get the AMI tools:
+     wget http://s3.amazonaws.com/ec2-downloads/ec2-ami-tools.zip
+     unzip ec2-ami-tools.zip
+     mv ec2-ami-tools-1.3-66634 ec2-ami
+     mv ec2-ami ~
+4. Configure .bashrc so the tools' bin path is in $PATH and AMI tool location
+   is registered:
+     export PATH=$PATH:/home/ec2-user/ec2-ami/bin
+     export EC2_AMITOOL_HOME=/home/ec2-user/ec2-ami
+5. In .bashrc, set env. variables for X.509 cert and private key locations:
+     export EC2_PRIVATE_KEY=YOUR-PATH-TO-PRIVATE-KEY
+     export EC2_CERT= YOUR-PATH-TO-X.509-CERTIFICATE
+6. Become root, but load in environment variables from .bashrc:
+     sudo su
+     source /home/ec2-user/.bashrc
+7. Bundle the EC2 instance (AWS account number is on security credential page):
+     ec2-bundle-vol -d /mnt -k $EC2_PRIVATE_KEY -c $EC2_CERT \
+       -u AWS_ACCOUNT_NUMBER -r i386
+   NOTE: If you run out of room, getting errors during the rsync and such, you
+   can alway attach some EBS storage.
+8. Upload bundle to S3 (you'll need Access Key ID and Secret Access Key from
+   security credentials page)... bucket will be auto-created, but don't use
+   punctuation in bucket name:
+     ec2-upload-bundle -b YOUR-S3-BUCKET -m /mnt/image.manifest.xml \
+     -a YOUR-AWS-ACCESS-ID -s YOUR-AWS-ACCESS-KEY
+   NOTE: If you get an SSL-related error use --url http://s3.amazonaws.com
 9. Register AMI (command will output ID of AMI, not important):
-   ec2-register YOUR-S3-BUCKET/image.manifest.xml
+     ec2-register YOUR-S3-BUCKET/image.manifest.xml

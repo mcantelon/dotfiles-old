@@ -1,0 +1,8 @@
+Make a filesystem at the provided device path:
+  sudo mkfs.ext3 /dev/sdf
+
+Create a mount point for the filesystem (naming it using the volume ID is helpful):
+  sudo mkdir /mnt/ebs-5d271036
+
+Mount the filesystem:
+  sudo mount /dev/sdf /mnt/ebs-5d271036
