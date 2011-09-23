@@ -43,6 +43,9 @@ export CVSEDITOR=/bin/vi
 # tweak bash prompt
 export PS1='\h|\W$ '
 
+# paging ls
+alias lsm='ls -l | more'
+
 # load site-specific aliases, etc.
 if [ -f $HOME/.bash_local ];
 then
