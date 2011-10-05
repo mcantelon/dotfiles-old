@@ -1,0 +1,7 @@
+#!/bin/bash
+svn update
+export SVN_LATEST=`ls | sort | head -n 1`
+svn rm $SVN_LATEST
+svn commit -m "Deleted oldest tag." $SVN_LATEST
+rm -f latest
+ln -s `ls | sort | tail -n 1` latest
