@@ -1,0 +1,8 @@
+# enable
+sudo ufw enable
+
+# open a port
+sudo ufw allow <port>
+
+# restart if need be
+sudo /etc/init.d/ufw restart

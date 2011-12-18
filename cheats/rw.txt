@@ -1,0 +1,30 @@
+Installation:
+
+  sudo npm install railway -g
+
+Start project:
+
+  rw i blog
+  cd blog/
+
+Install deps:
+
+  npm install -l
+
+Generate scaffolding for "post" with fields "title" and "content":
+
+  rw g crud post title content
+
+Start DB/server and view what has been created:
+
+  sudo mongod
+  rw s 8888
+  open http://127.0.0.1:8888/posts
+
+Home placeholder can be deleted:
+
+  rm public/index.html
+
+Edit routes:
+
+  vi config/routes.js
