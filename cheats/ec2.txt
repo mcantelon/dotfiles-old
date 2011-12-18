@@ -4,7 +4,7 @@ Quick guide to semi-automated creation/deployment:
 
   # make sure your .bashrc is set up to set env variables (see later in this file)
   ec2-add-keypair test-keypair > test-keypair.pem
-  ec2-run-instances -k test-keypair ami-8c1fece5
+  ec2-run-instances -k test-keypair -g "name of security group" ami-8c1fece5
   ec2-describe-instances # to get public DNS of machine
   chmod a-r test-keypair.pem
   chmod u+r test-keypair.pem

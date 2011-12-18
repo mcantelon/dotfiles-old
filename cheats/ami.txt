@@ -21,11 +21,11 @@ Make Amazon AMI from EC2 instance
 6. Become root, but load in environment variables from .bashrc:
      sudo su
      source /home/ec2-user/.bashrc
-7. Bundle the EC2 instance (AWS account number is on security credential page):
+7. Bundle the EC2 instance (AWS account number is on security credential page)
+   using the following command. Make sure whatever working directory specified
+   by "-d" has lots of disk space (if necessary create an EBS volume for it):
      ec2-bundle-vol -d /mnt -k $EC2_PRIVATE_KEY -c $EC2_CERT \
        -u AWS_ACCOUNT_NUMBER -r i386
-   NOTE: If you run out of room, getting errors during the rsync and such, you
-   can alway attach some EBS storage.
 8. Upload bundle to S3 (you'll need Access Key ID and Secret Access Key from
    security credentials page)... bucket will be auto-created, but don't use
    punctuation in bucket name:
