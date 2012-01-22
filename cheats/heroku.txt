@@ -6,7 +6,7 @@
 4. Add your public key (heroku says it does this, but I got deploy errors until
    I did this):
    heroku keys:add ~/.ssh/id_rsa.pub
-5. Create git repo for all if you haven't already done so.
+5. Create git repo for your app if you haven't already done so.
 6. In a file called "Procfile" put start instructions in:
    web: node server.js
 7. Add and commit Procfile
