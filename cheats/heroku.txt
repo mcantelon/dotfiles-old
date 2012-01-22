@@ -24,3 +24,5 @@
     heroku apps
 12. List running apps:
     heroku ps
+13. Restart a running app:
+    heroku ps:restart <name of app process>
