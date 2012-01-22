@@ -1,0 +1,26 @@
+1. Sign up for an account on Heroku.com
+2. Install heroku CLI tool:
+   http://devcenter.heroku.com/articles/node-js#prerequisites
+3. Log in with CLI tool:
+   heroku login
+4. Add your public key (heroku says it does this, but I got deploy errors until
+   I did this):
+   heroku keys:add ~/.ssh/id_rsa.pub
+5. Create git repo for all if you haven't already done so.
+6. In a file called "Procfile" put start instructions in:
+   web: node server.js
+7. Add and commit Procfile
+   git add Procfile
+   git commit -m "Added Procfile for Heroku."
+7. Register a heroku app for it:
+   heroku create --stack cedar
+8. Send your app to heruko:
+   git push heroku master
+9. Scale your app:
+   heroku ps:scale web=1
+10. See your web app in a browser:
+    heroku open
+11. List registered apps:
+    heroku apps
+12. List running apps:
+    heroku ps
