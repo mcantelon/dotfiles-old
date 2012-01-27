@@ -1,0 +1,5 @@
+
+
+Clear/rebuild DB:
+./symfony propel:insert-sql
+

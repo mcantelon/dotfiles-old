@@ -1,0 +1,5 @@
+Test:
+  patch -p0 --dry-run < some.patch
+
+Do it for real:
+  patch -p0 --dry-run < some.patch

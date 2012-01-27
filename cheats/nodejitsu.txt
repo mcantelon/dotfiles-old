@@ -1,0 +1,6 @@
+. Register at nodejitsu.com for an account
+. Install jitsu CLI app:
+   sudo npm install jitsu -g
+. Confirm account:
+   jitsu users confirm mcantelon <value provided by Nodejitsu>
+
