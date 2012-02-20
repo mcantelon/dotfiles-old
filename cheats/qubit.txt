@@ -1,4 +1,5 @@
-
+PHP requirements:
+ pdo/mysql, mbstring and xsl
 
 Clear/rebuild DB:
 ./symfony propel:insert-sql
