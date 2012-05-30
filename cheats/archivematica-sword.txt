@@ -1,0 +1,31 @@
+Archivematica logic lives in src/upload-qubit: python version of script is used, not PHP version
+
+On Qubit side, make sure 'qtSwordPlugin' is enabled in config/ProjectConfiguration.class.php
+
+Need to make sure gearman PHP extension is installed:
+sudo apt-get install libgearman-dev
+pecl install gearman
+sudo vi /etc/php5/conf.d/gearman.ini # make extension is enabled
+
+In Qubit side, init/qubit-sword.conf holds Upstart config for daemon which ends up living at /etc/init
+
+Gearman config at: config/gearman.yml 
+
+Qubit internals:
+  plugins/qtSwordPlugin/lib/qtSwordPluginWorker.class.php 
+  plugins/qtSwordPlugin/lib/qtPackageExtractorFactory.class.php <- run extractor "plugin" classes 
+  plugins/qtSwordPlugin/config/qtSwordPluginConfiguration.class.php 
+  plugins/qtSwordPlugin/lib/qtPackageExtractorMETSArchivematicaDIP.class.php <- METS extraction
+
+  Auth handler (uses Symfony filter):
+  plugins/qtSwordPlugin/lib/qtSwordPluginHttpAuthFilter.class.php 
+
+PHP Dameon:
+  sudo start qubit-sword
+  cat /tmp/qubit-sword.log
+
+If getting weird error use Symfony to clear the cache twice
+
+Change PHP error levels for various Qubit dev levels:
+  vi apps/qubit/config/settings.yml
+  example: qubit_dev.php 
