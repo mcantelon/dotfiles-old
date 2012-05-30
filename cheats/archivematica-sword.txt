@@ -53,3 +53,16 @@ There is some more here,but I think it is not updated. https://www.qubit-toolkit
 
 PS: now I can remember why I used fork(), for some reason the PHP daemon (the loop) was eating all the memory of the system and never free it up, probably a problem with the current ORM and the garbage collector or something... the fork syscall was a workaround so after the worker gets done with a job, the process replica is killed, and so on... less memory but dirty as hell - and the fork() as I told you was causing different problems with the db connections, but I think that is solved now calling Propel::close() in a pair of specific locations in the Worker
 
+
+One more thing! The sfGearmanWorker class (sfGearmanPlugin) extends the php-gearman GearmanWorker class with a method called ->loop(), with is called by the symfony task executed as a daemon. If you see the code, this loop triggers some Symfony events that it may be interesting to capture so when triggered you can register the fail or whatever it is needed to do.
+
+This unit tests registers callbacks for these triggers:
+http://trac.symfony-project.org/browser/plugins/sfGearmanPlugin/trunk/test/unit/sfGearmanWorkerTest.php
+
+Example:
+
+$dispatcher->connect('gearman.start', function (sfEvent $e) {
+  global $t;
+  $t->pass('::loop() notify a gearman.start sfEvent');
+});
+
