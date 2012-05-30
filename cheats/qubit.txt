@@ -1,4 +1,8 @@
+Batch indexing:
+  ./symfony search:populate QubitSearch
 
+Batch update of nested set data:
+  ./symfony propel:build-nested-set
 
 Clear/rebuild DB:
 ./symfony propel:insert-sql
