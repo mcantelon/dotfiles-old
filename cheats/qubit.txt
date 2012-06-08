@@ -1,6 +1,16 @@
 PHP requirements:
  pdo/mysql, mbstring and xsl
 
+Batch indexing:
+  ./symfony search:populate QubitSearch
+
+Batch update of nested set data:
+  ./symfony propel:build-nested-set
+>>>>>>> 134311fb8ef9b2204d341afa9814f1b3753fde39
+
 Clear/rebuild DB:
 ./symfony propel:insert-sql
 
+djjuhasz: "SELECT count(*) from information_object where lft > lft0 and rgt < rgt0"
+[12:34pm] djjuhasz: where lft0 and rgt0 are the values for the top-level parent
+[12:35pm] djjuhasz: going to grab some lunch, bbiab

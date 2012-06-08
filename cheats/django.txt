@@ -1,0 +1,5 @@
+./manage.py shell
+from main import models
+
+models.SourceDirectory.objects.get(pk=id)
+models.SourceDirectory.objects.get(path='/home/mike/Public')

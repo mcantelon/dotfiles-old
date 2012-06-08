@@ -1,0 +1,68 @@
+Archivematica logic lives in src/upload-qubit: python version of script is used, not PHP version
+
+On Qubit side, make sure 'qtSwordPlugin' is enabled in config/ProjectConfiguration.class.php
+Or you can enable SWORD plugin under Admin tab.
+
+Need to make sure gearman PHP extension is installed:
+sudo apt-get install libgearman-dev
+pecl install gearman
+sudo vi /etc/php5/conf.d/gearman.ini # make extension is enabled
+
+In Qubit side, init/qubit-sword.conf holds Upstart config for daemon which ends up living at /etc/init
+
+Gearman config at: config/gearman.yml 
+
+Qubit internals:
+  plugins/qtSwordPlugin/lib/qtSwordPluginWorker.class.php 
+  plugins/qtSwordPlugin/lib/qtPackageExtractorFactory.class.php <- run extractor "plugin" classes 
+  plugins/qtSwordPlugin/config/qtSwordPluginConfiguration.class.php 
+  plugins/qtSwordPlugin/lib/qtPackageExtractorMETSArchivematicaDIP.class.php <- METS extraction
+
+  Auth handler (uses Symfony filter):
+  plugins/qtSwordPlugin/lib/qtSwordPluginHttpAuthFilter.class.php 
+
+PHP Dameon:
+  sudo start qubit-sword
+  cat /tmp/qubit-sword.log
+
+If getting weird error use Symfony to clear the cache twice
+
+Change PHP error levels for various Qubit dev levels:
+  vi apps/qubit/config/settings.yml
+  example: qubit_dev.php
+
+Jesus:
+
+The qubit-sword service keeps a Symfony task running as a daemon, what it does it's actually to run a loop managed by sfGearmanPlugin like this:
+
+<?php
+  $worker= new GearmanWorker();
+  $worker->addServer();
+  $worker->addFunction("depositSwordPackage", "depositSwordPackage"); # register the function
+  while ($worker->work()); # start te worker listening for job submissions
+
+So when a Job comes in, this "daemon" will run the depositSwordPackage method, which does the fork() and blahblahblah... gearmand only does the queue management.
+
+The nice part is that we could have as many workers as we want, running in different machines, as soon as we have all the qubit workers sharing the same code base, running against the same database server, sharing the same uploads directory... but never put this in practice and I don't think we need it for Archivematica. But we needed the queue anyways.
+
+One more thing, gearmand queue is not persistent by default, you can use mysql but I think it needs a separate database.
+
+When a package is deposited using the SWORD service, the first thing we do is to return a 202 response to the upload-quubit.py client, 202 = Accepted if i remember well, you know, "ok dude, job accepted, now go to the queue!". But Archivematica is going to need to know about the status of the job. If you are sending the file with rsync, you haven't done the deposit yet, so Qubit won't know anything about it. But one the rsync is done, the comes the deposit, that could take a while if Qubit has to process big digital objects, so Qubit would need to get implemented a feature to return the status of a job as the SWORD 1.3 specification does. And I don't know if that is going to be easy just using the current configuration, because I am not sure if you can go back to gearmand to check if a job is on the queue or to know about it, I am not sure about that.
+
+There is some more here,but I think it is not updated. https://www.qubit-toolkit.org/wiki/SWORD
+
+PS: now I can remember why I used fork(), for some reason the PHP daemon (the loop) was eating all the memory of the system and never free it up, probably a problem with the current ORM and the garbage collector or something... the fork syscall was a workaround so after the worker gets done with a job, the process replica is killed, and so on... less memory but dirty as hell - and the fork() as I told you was causing different problems with the db connections, but I think that is solved now calling Propel::close() in a pair of specific locations in the Worker
+
+
+One more thing! The sfGearmanWorker class (sfGearmanPlugin) extends the php-gearman GearmanWorker class with a method called ->loop(), with is called by the symfony task executed as a daemon. If you see the code, this loop triggers some Symfony events that it may be interesting to capture so when triggered you can register the fail or whatever it is needed to do.
+
+This unit tests registers callbacks for these triggers:
+http://trac.symfony-project.org/browser/plugins/sfGearmanPlugin/trunk/test/unit/sfGearmanWorkerTest.php
+
+Example:
+
+$dispatcher->connect('gearman.start', function (sfEvent $e) {
+  global $t;
+  $t->pass('::loop() notify a gearman.start sfEvent');
+});
+
