@@ -14,3 +14,10 @@ Clear/rebuild DB:
 djjuhasz: "SELECT count(*) from information_object where lft > lft0 and rgt < rgt0"
 [12:34pm] djjuhasz: where lft0 and rgt0 are the values for the top-level parent
 [12:35pm] djjuhasz: going to grab some lunch, bbiab
+
+Some content post-processing in responseFilter at:
+  apps/qubit/config/qubitConfiguration.class.php
+
+Page caching in isCacheable and getPageCache at:
+  vendor/symfony/lib/view/sfViewCacheManager.class.php
+
