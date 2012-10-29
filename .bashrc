@@ -23,7 +23,7 @@ alias ga='git add'
 alias glog='git log --pretty=format:"%h %ad | %s%d [%an]" --graph --date=short'
 
 # hub (https://github.com/defunkt/hub)
-alias git=hub
+#alias git=hub
 
 # deja-related
 alias cheat='deja cheat'
