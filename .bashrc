@@ -51,3 +51,5 @@ if [ -f $HOME/.bash_local ];
 then
   source $HOME/.bash_local
 fi
+
+alias flush='./symfony propel:purge --title=Qubit --description="Test Site" --username=mike --password=mike --email="mcantelon@gmail.com"'
