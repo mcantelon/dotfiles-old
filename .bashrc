@@ -1,3 +1,8 @@
+# virtualenv-related
+export WORKON_HOME=~/Envs
+mkdir -p $WORKON_HOME
+source /usr/local/bin/virtualenvwrapper.sh
+
 # git helpers (via https://github.com/ryanb/dotfiles/blob/master/zsh/aliases)
 alias gl='git pull'
 alias gp='git push'
