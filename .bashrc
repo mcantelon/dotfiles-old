@@ -1,10 +1,3 @@
-# cvs helpers (for Drupal.org work)
-alias multiforms='git clone --branch 6.x-1.x http://git.drupal.org/project/multiforms.git'
-
-# subversion helpers
-alias sst='svn status'
-alias sup='svn update'
-
 # git helpers (via https://github.com/ryanb/dotfiles/blob/master/zsh/aliases)
 alias gl='git pull'
 alias gp='git push'
@@ -36,10 +29,6 @@ function hint() {
 # PATH tweak for npm, etc.
 export PATH=$PATH:/usr/local/bin
 
-# set cvs-related (for Drupal.org work)
-export CVSROOT=:pserver:mcantelon@cvs.drupal.org:/cvs/drupal-contrib
-export CVSEDITOR=/bin/vi
-
 # tweak bash prompt
 export PS1='\h|\W$ '
 
@@ -52,4 +41,5 @@ then
   source $HOME/.bash_local
 fi
 
+# AtoM-related
 alias flush='./symfony propel:purge --title=Qubit --description="Test Site" --username=mike --password=mike --email="mcantelon@gmail.com"'
