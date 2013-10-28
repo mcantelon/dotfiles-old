@@ -32,7 +32,7 @@ function hint() {
 }
 
 # PATH tweak for npm, etc.
-export PATH=$PATH:/usr/local/bin
+export PATH=$PATH:/usr/local/bin:$HOME/bin
 
 # tweak bash prompt
 export PS1='\h|\W$ '
