@@ -3,7 +3,7 @@ export WORKON_HOME=~/Envs
 mkdir -p $WORKON_HOME
 source /usr/local/bin/virtualenvwrapper.sh
 
-# git helpers (via https://github.com/ryanb/dotfiles/blob/master/zsh/aliases)
+# git shortcuts (via https://github.com/ryanb/dotfiles/blob/master/zsh/aliases)
 alias gl='git pull'
 alias gp='git push'
 alias gpom='git push origin master'
@@ -18,10 +18,8 @@ alias pull='git pull origin master'
 alias gi='git remote show origin'
 alias ga='git add'
 
+# fancy log
 alias glog='git log --pretty=format:"%h %ad | %s%d [%an]" --graph --date=short'
-
-# hub (https://github.com/defunkt/hub)
-#alias git=hub
 
 # deja-related
 alias cheat='deja cheat'
