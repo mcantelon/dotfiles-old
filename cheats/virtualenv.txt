@@ -1,0 +1,15 @@
+Installation:
+
+$ pip install virtualenvwrapper
+$ export WORKON_HOME=~/Envs # add this line to .bashrc
+$ source /usr/local/bin/virtualenvwrapper.sh # add this line to .bashrc
+$ mkdir -p $WORKON_HOME
+$ echo 'cd $VIRTUAL_ENV' >> $WORKON_HOME/postactivate # change into virtual env's directory when you activate it
+
+Creating a new virtual environment:
+
+$ mkvirtualenv ss # initial creation of virtual environment
+
+Working with a virtual environment:
+
+$ workon ss # tells virtualenv you want to use this virtual environment
