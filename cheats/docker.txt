@@ -1,0 +1,14 @@
+docker help <command>
+
+Running containers:
+
+docker run --name some-nginx -v ~/docker/test/html:/usr/share/nginx/html:ro  -p 8080:80 -d nginx
+
+Managing containers:
+
+docker container stop <container ID>
+docker container rm <container ID>
+
+Run command in container:
+
+docker exec -it <container id> /bin/bash
